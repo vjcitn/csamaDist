@@ -48,6 +48,8 @@ https://github.com/xiaomengh/tumor-evo-rapid-autopsy.git.
 suppressPackageStartupMessages({
  library(csamaDist)
  library(bioDist)
+ library(bluster)
+ library(cluster)
 })
 data(cnv_log_R)
 data = cnv_log_R
@@ -92,15 +94,42 @@ abline(0,1)
 ```{r redo}
 fit2 = hclust(cd, method="ward.D2")
 plot(fit2)
+abline(h=.3, lty=2)
 ```
 
 ### Silhouette measure
+ 
+From ?silhouette with the cluster library:
+
+```
+For each observation i, the _silhouette width_ s(i) is defined as follows:
+
+     Put a(i) = average dissimilarity between i and all other points of
+     the cluster to which i belongs (if i is the _only_ observation in
+     its cluster, s(i) := 0 without further calculations).  For all
+     _other_ clusters C, put d(i,C) = average dissimilarity of i to all
+     observations of C.  The smallest of these d(i,C) is b(i) := \min_C
+     d(i,C), and can be seen as the dissimilarity between i and its
+     "neighbor" cluster, i.e., the nearest one to which it does _not_
+     belong.  Finally,
+
+                   s(i) := ( b(i) - a(i) ) / max( a(i), b(i) ).         
+     
+     'silhouette.default()' is now based on C code donated by Romain
+     Francois (the R version being still available as
+     'cluster:::silhouette.default.R').
+
+     Observations with a large s(i) (almost 1) are very well clustered,
+     a small s(i) (around 0) means that the observation lies between
+     two clusters, and observations with a negative s(i) are probably
+     placed in the wrong cluster.
+```
 
 ```{r init}
-ct1 = cutree(fit, 9)
+ct1 = cutree(fit2, h=.3)
 c2 = cnv_log_R
 rownames(c2) = paste(rownames(c2), as.numeric(ct1))
-asil = approxSilhouette(c2, ct1)
-```
+sil = silhouette(ct1, cd)
+plot(sil)
 ```
 
