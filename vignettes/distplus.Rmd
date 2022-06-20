@@ -1,0 +1,106 @@
+---
+title: "distances, nearest-neighbor graphs, clustering"
+author: "Vincent J. Carey, stvjc at channing.harvard.edu"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{distances, nearest-neighbor graphs, clustering}
+  %\VignetteEncoding{UTF-8}
+output:
+  BiocStyle::html_document:
+    highlight: pygments
+    number_sections: yes
+    theme: united
+    toc: yes
+---
+
+# Road map
+
+# Application: inferring steps in tumor metastasis in a breast cancer patient
+
+We'll examine data distributed with a [2021 Genome Biology paper](https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-021-00989-6) from the Gabor Marth lab.
+
+![Clinical sequence of interventions.](marthPatient.jpg)
+
+![Event sequence.](marthEvolve.jpg)
+
+## A view of copy number aberrations for 1Mb tiling
+
+28 tumors were sampled and sequenced in a rapid autopsy procedure.  Copy number
+variation was assessed using [FACETS](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5027494/).
+
+The tissues from which tumors were taken are Br (Breast), Bo (Bone), Bn (Brain),
+Ln (Lung), Lv (Liver), Pa (Pancreas), Ly (Lymph nodes), Kd (Kidney)
+
+<a href="cnv-heatmap.html">A plotly-based visualization</a>
+
+The (vertical) ordering of tissues is chosen to exemplify certain similarities.
+
+For example the block of blue on chr10 is seen for only three samples.
+This is an indication of a deletion.
+
+## A cluster analysis proposed in support of the evolutionary map
+
+This code is lightly modified from a script distributed at 
+https://github.com/xiaomengh/tumor-evo-rapid-autopsy.git.
+
+```{r doclus}
+suppressPackageStartupMessages({
+ library(csamaDist)
+ library(bioDist)
+})
+data(cnv_log_R)
+data = cnv_log_R
+samples = c('Ln7','Ln9','Ln1','BrM','BrP',
+           'Ln11','Ly2','Ln3',
+           'Bo3','Ln10','Bo1','Ln8','Lv3','Ln5','Bo2','Bn2','Bn1','Bn3','Bn4','Ln2',
+           'Ly1','Ln6',
+           'Kd1','Ln4','Lv4','Lv2','Lv1','Pa1')
+rownames(data) = samples
+d = dist(data, method="euclidean")
+fit = hclust(d, method="average")
+# the following line changes the order of the samples to produce the Fig.S3B but doesn't change the phylogenetic relationship
+fit$order = c(1,4,2,5,3,13,10,20,16,11,12,15,9,17,19,14,18,21,22,7,6,8,25,27,26,28,23,24)
+plot(fit)
+```
+
+## Drilling down on the clustering
+
+### Comparing Euclidean and Correlation distances
+
+```{r dodists}
+cd = cor.dist(cnv_log_R)
+ed = dist(cnv_log_R)
+plot(as.numeric(ed), as.numeric(cd), xlab="All pairwise Euclidean distances", ylab="All pairwise correlation distances")
+```
+
+### A pair with discrepant correlation and euclidean distance values (over entire genome)
+
+We'll have a look at the first 100Mb on chr1.
+```{r lk1mb}
+plot(cnv_log_R["Ly1",1:100],pch=19, main="chr1, first 100Mb", ylab="FACETS CNV log R", xlab="chr1")
+points(cnv_log_R["Ln1",1:100], col="red",pch=19)
+legend(60, -.5, pch=19, col=c("black", "red"), legend=c("Ly1", "Ln1"))
+cor(cnv_log_R["Ly1", 1:100], cnv_log_R["Ln1", 1:100])
+edist = function(x,y) sqrt(sum((x-y)^2))
+edist(cnv_log_R["Ly1", 1:100], cnv_log_R["Ln1", 1:100])
+plot(cnv_log_R["Ly1", 1:100], cnv_log_R["Ln1", 1:100], xlab="Ly1", ylab="Ln1")
+abline(0,1)
+```
+
+### Redo clustering with alternative distance and agglomeration method
+```{r redo}
+fit2 = hclust(cd, method="ward.D2")
+plot(fit2)
+```
+
+### Silhouette measure
+
+```{r init}
+ct1 = cutree(fit, 9)
+c2 = cnv_log_R
+rownames(c2) = paste(rownames(c2), as.numeric(ct1))
+asil = approxSilhouette(c2, ct1)
+```
+```
+
