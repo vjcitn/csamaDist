@@ -1,6 +1,6 @@
 Package: csamaDist
 Title: distance, nn-Graph, clustering lecture, 2022
-Version: 0.0.3
+Version: 0.0.4
 Authors@R: 
     c(person(
         "Vincent", "Carey", role = c("aut", "cre"),
