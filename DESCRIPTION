@@ -1,6 +1,6 @@
 Package: csamaDist
 Title: distance, nn-Graph, clustering lecture, 2022
-Version: 0.0.4
+Version: 0.0.6
 Authors@R: 
     c(person(
         "Vincent", "Carey", role = c("aut", "cre"),
@@ -14,9 +14,10 @@ Depends: R (>= 3.6), dplyr, SummarizedExperiment, SingleCellExperiment, SingleR
 Imports:
     methods,
     tibble,
-    BiocManager
-Suggests: knitr, testthat
+    BiocManager, igraph
+Suggests: knitr, testthat, bioDist, scRNAseq, bluster, cluster,
+	scater, scran, scuttle
 LazyData: true
 VignetteBuilder: knitr
 biocViews: Infrastructure
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.3
